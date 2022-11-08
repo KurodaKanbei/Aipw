@@ -1,0 +1,6 @@
+/data
+/models
+/predictions
+/.ipynb_checkpoints
+/.idea
+*.ipynb
