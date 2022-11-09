@@ -7,6 +7,7 @@ from sklearn.impute import SimpleImputer
 import seaborn as sb
 from scipy import stats
 from sklearn.ensemble import IsolationForest
+from sklearn.svm import LinearSVR
 from matplotlib import pyplot as plt
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.ensemble import RandomForestRegressor
@@ -16,7 +17,8 @@ from sklearn.impute import KNNImputer
 from sklearn.impute import SimpleImputer
 from sklearn.datasets import dump_svmlight_file
 from xgboost import XGBRegressor
-from sklearn.feature_selection import SelectKBest, f_regression
+from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression, SelectFromModel
+from sklearn.ensemble import ExtraTreesRegressor
 
 if __name__ == '__main__':
 
@@ -31,11 +33,9 @@ if __name__ == '__main__':
     imputer = KNNImputer(n_neighbors=20)
     X_imp = imputer.fit_transform(X)
 
-    model = sklearn.ensemble.IsolationForest(max_samples=200,
-                                             contamination=0.025,
-                                             max_features=len(X_imp[0]))
-    model.fit(X_imp)
-    outl_pred = model.predict(X_imp)
+    model = sklearn.ensemble.IsolationForest(max_samples=0.5, contamination=0.025)
+    # model = sklearn.neighbors.LocalOutlierFactor(contamination=0.025)
+    outl_pred = model.fit_predict(X_imp)
     mask = outl_pred != -1
 
 
@@ -66,9 +66,12 @@ if __name__ == '__main__':
 
     X_train = X_cleaned
     y_train = y_cleaned
-    selector = SelectKBest(score_func=f_regression, k=100)
 
-    selector.fit(X_train, y_train)
+    # lsvr = LinearSVR(C=0.01).fit(X_train, y_train)
+    model = ExtraTreesRegressor(n_estimators=50).fit(X_train, y_train.ravel())
+    selector = SelectFromModel(model, prefit=True)
+    selector.fit(X_train, y_train.ravel())
+    # selector = SelectKBest(score_func=mutual_info_regression, k=200)
 
     X_train = sklearn.preprocessing.StandardScaler().fit(X_cleaned).transform(X_train)
     X_train = selector.transform(X_train)
@@ -99,8 +102,8 @@ if __name__ == '__main__':
     ftest_svm.close()
     """
 
-    RFR_model = RandomForestRegressor(max_depth=10, n_estimators=100)
-    RFR_model.fit(X_train, y_train)
+    RFR_model = RandomForestRegressor(max_depth=10, n_estimators=50)
+    RFR_model.fit(X_train, y_train.ravel())
 
     y_pred_RFR = RFR_model.predict(X_test_stdised)
     submission = pd.DataFrame(y_pred_RFR, index=X_test.index, columns=['y'])
