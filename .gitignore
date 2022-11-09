@@ -3,5 +3,4 @@
 /predictions
 /.ipynb_checkpoints
 /.idea
-*.ipynb
 *.csv
