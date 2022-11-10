@@ -39,8 +39,8 @@ if __name__ == '__main__':
     X = X.drop(idx, axis=1)
     print(X.shape)
     nan_idx = np.isnan(X)
-    imputer = KNNImputer(n_neighbors=20)
-    # imputer = SimpleImputer(strategy='median')
+    # imputer = KNNImputer(n_neighbors=20)
+    imputer = SimpleImputer(strategy='median')
     X_imp = imputer.fit_transform(X)
 
     X_train = X_imp
@@ -92,10 +92,10 @@ if __name__ == '__main__':
     """
     print(X_train.shape, y_train.shape)
 
-    # RFR_model = RandomForestRegressor(max_depth=10, n_estimators=50)
+    # model = RandomForestRegressor(max_depth=10, n_estimators=50)
     model = GradientBoostingRegressor(n_estimators=300, learning_rate=0.1,
-                                       max_depth=5, max_features=0.3,
-                                       min_samples_leaf=15, min_samples_split=10)
+                                      max_depth=5, max_features=0.3,
+                                     min_samples_leaf=15, min_samples_split=10)
     model.fit(X_train, y_train.ravel())
     y_pred_RFR = model.predict(X_test_stdised)
     submission = pd.DataFrame(y_pred_RFR, index=X_test_backup.index, columns=["y"])

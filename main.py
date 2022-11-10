@@ -3,7 +3,7 @@ import os
 import argparse
 
 #   general arguments
-parser = argparse.ArgumentParser(description='use xgboost to train a text classifier and do a predict')
+parser = argparse.ArgumentParser(description='use xgboost to train a regressor and do a predict')
 parser.add_argument('-fsave-model', type=str, default='./models/new%d.model')
 parser.add_argument('-ftrain-svm', type=str, default='./data/train.svm.txt')
 parser.add_argument('-ftest-svm', type=str, default='./data/test.svm.txt')
@@ -26,7 +26,7 @@ parser.add_argument('-subsample', type=float, default=1)
 #parser.add_argument('-early-stopping-rounds', type=int, default=3)
 parser.add_argument('-colsample-bytree', type=float, default=1)
 parser.add_argument('-colsample-bylevel', type=float, default=1)
-parser.add_argument('-eta', type=float, default=0.2)            #   step size shrinkage used in update to prevents overfitting
+parser.add_argument('-eta', type=float, default=0.1)            #   step size shrinkage used in update to prevents overfitting
 #parser.add_argument('-max-leaf-nodes', type=int, default=80)
 parser.add_argument('-scale-pos-weight', type=float, default=12.0)
 parser.add_argument('-silent', type=int, default=0)
@@ -77,6 +77,7 @@ def predict(bst):
     fpred_out.close()
 
 if __name__ == '__main__':
+
     D_test = xgboost.DMatrix(args.ftest_svm)
     D_train = xgboost.DMatrix(args.ftrain_svm)
     D_val = xgboost.DMatrix(args.fval_svm)
