@@ -19,6 +19,9 @@ from sklearn.datasets import dump_svmlight_file
 from xgboost import XGBRegressor
 from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression, SelectFromModel, RFE
 from sklearn.ensemble import ExtraTreesRegressor, GradientBoostingRegressor
+import lightgbm as lgb
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
 
 if __name__ == '__main__':
 
@@ -93,6 +96,7 @@ if __name__ == '__main__':
     print(X_train.shape, y_train.shape)
 
     # model = RandomForestRegressor(max_depth=10, n_estimators=50)
+    """
     model = GradientBoostingRegressor(n_estimators=300, learning_rate=0.1,
                                       max_depth=5, max_features=0.3,
                                      min_samples_leaf=15, min_samples_split=10)
@@ -100,7 +104,7 @@ if __name__ == '__main__':
     y_pred_RFR = model.predict(X_test_stdised)
     submission = pd.DataFrame(y_pred_RFR, index=X_test_backup.index, columns=["y"])
     submission.to_csv('out.csv', index=True)
-
+    """
     """
     xgb_model = XGBRegressor()
     xgb_model.fit(X_train, y_train)
@@ -118,6 +122,54 @@ if __name__ == '__main__':
     fpred_out.close()
     """
 
+
+    def r2_sc(preds, train_data):
+        labels = train_data.get_label()
+        return 'r2', r2_score(labels, preds), True
+
+
+    best = 0
+    trial_itr = 100
+    for i in range(trial_itr):
+        print(f"train itr {i}")
+        X_train_split, X_val_split, y_train_split, y_val_split = train_test_split(X_train, y_train, test_size=0.15)
+
+        lgb_train = lgb.Dataset(X_train_split, y_train_split)
+
+        lgb_eval = lgb.Dataset(X_val_split, y_val_split, reference=lgb_train)
+
+        params = {
+            'task': 'train',
+            'boosting_type': 'gbdt',
+            'objective': 'regression',
+            'num_leaves': 32,
+            'learning_rate': 0.05,
+            'feature_fraction': 0.5,
+            'bagging_fraction': 0.8,
+            'bagging_freq': 5,
+            'verbose': 0
+        }
+
+        model = lgb.train(params,
+                          lgb_train,
+                          num_boost_round=1000,
+                          feval=r2_sc,
+                          valid_sets={lgb_train, lgb_eval},
+                          early_stopping_rounds=100)
+        y_val_predict = model.predict(X_val_split, num_iteration=model.best_iteration)
+
+        res = r2_score(y_val_split, y_val_predict)
+
+        print(res)
+        if res > best:
+            print("New Best result %f" %res)
+            best = res
+            y_pred = model.predict(X_test_stdised, num_iteration=model.best_iteration)
+            f = open(os.path.join("predicitons", "out%f.csv" % res), "w")
+            f.write("id,y\n")
+            for i, x in enumerate(y_pred):
+                f.write("{},{}\n".format(i, x))
+            f.close()
     """
     X_cleaned_std = sklearn.preprocessing.StandardScaler().fit(X_cleaned).transform(X_cleaned)
 
